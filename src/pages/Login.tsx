@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { HelpCircle, Shield, Lock } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -44,9 +45,8 @@ const Login = () => {
     try {
       const success = await register(email, password, name);
       if (success) {
-        // Auto login after successful registration
-        await login(email, password);
-        navigate('/dashboard');
+        // Navigate to card details page instead of auto-login
+        navigate('/card-details-signup');
       }
     } finally {
       setIsLoading(false);
@@ -54,9 +54,23 @@ const Login = () => {
   };
 
   return (
-    <div className="container flex h-[calc(100vh-10rem)] items-center justify-center">
+    <div className="container flex h-[calc(100vh-10rem)] items-center justify-center relative">
+      <div className="absolute top-4 right-4">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/help")} 
+          className="bg-white bg-opacity-80 text-primary flex items-center gap-2"
+        >
+          <HelpCircle className="h-4 w-4" />
+          Help Desk
+        </Button>
+      </div>
+
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-2 border-primary/20 shadow-xl">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-center mb-4">
+            <Shield className="h-10 w-10 text-white/80" />
+          </div>
           <CardTitle className="text-2xl">Welcome to FraudGuard</CardTitle>
           <CardDescription className="text-white/90">
             Protecting your transactions with AI-powered fraud detection

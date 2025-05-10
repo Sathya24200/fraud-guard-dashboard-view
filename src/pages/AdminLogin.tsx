@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
-import { Shield } from "lucide-react";
+import { Shield, HelpCircle } from "lucide-react";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +30,18 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="container flex h-[calc(100vh-10rem)] items-center justify-center">
+    <div className="container flex h-[calc(100vh-10rem)] items-center justify-center relative">
+      <div className="absolute top-4 right-4">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/help")} 
+          className="bg-white bg-opacity-80 text-primary flex items-center gap-2"
+        >
+          <HelpCircle className="h-4 w-4" />
+          Help Desk
+        </Button>
+      </div>
+      
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-2 border-primary/20 shadow-xl">
         <CardHeader className="bg-gradient-to-r from-slate-800 to-gray-700 text-white rounded-t-lg">
           <div className="flex items-center justify-center mb-4">
