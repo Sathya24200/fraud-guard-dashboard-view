@@ -13,7 +13,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, adminOnly?: boolean) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
   isAdmin: () => boolean;
 }
@@ -40,12 +41,19 @@ const MOCK_USERS = [
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState(MOCK_USERS);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, adminOnly = false) => {
     // This is a mock implementation - in production, validate against a real backend
-    const foundUser = MOCK_USERS.find(u => u.email === email && u.password === password);
+    const foundUser = users.find(u => u.email === email && u.password === password);
     
     if (foundUser) {
+      // If adminOnly is true, only allow admin users
+      if (adminOnly && foundUser.role !== "admin") {
+        toast.error("Access denied. Admin privileges required.");
+        return false;
+      }
+      
       const { password, ...userWithoutPassword } = foundUser;
       setUser(userWithoutPassword);
       toast.success("Login successful");
@@ -56,6 +64,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
+  const register = async (email: string, password: string, name: string) => {
+    // Check if email already exists
+    if (users.some(u => u.email === email)) {
+      toast.error("Email already in use");
+      return false;
+    }
+    
+    // Create new user (with auto-incremented ID)
+    const newUser = {
+      id: String(users.length + 1),
+      email,
+      password,
+      name,
+      role: "user" as UserRole
+    };
+    
+    // Add to users array
+    setUsers([...users, newUser]);
+    toast.success("Account created successfully");
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     toast.info("You've been logged out");
@@ -64,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = () => user?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
