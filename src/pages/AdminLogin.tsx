@@ -31,13 +31,13 @@ const AdminLogin = () => {
 
   return (
     <div className="container flex h-[calc(100vh-10rem)] items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-2 border-primary/20 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-slate-800 to-gray-700 text-white rounded-t-lg">
           <div className="flex items-center justify-center mb-4">
-            <Shield className="h-10 w-10 text-primary" />
+            <Shield className="h-10 w-10 text-blue-300" />
           </div>
           <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-gray-300">
             Secure access for FraudGuard administrators
           </CardDescription>
         </CardHeader>
@@ -52,6 +52,7 @@ const AdminLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="border-2 focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div className="space-y-2">
@@ -62,17 +63,14 @@ const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="border-2 focus:ring-2 focus:ring-blue-400"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col items-start">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-gradient-to-r from-slate-800 to-gray-700 hover:from-slate-900 hover:to-gray-800 transition-all duration-300" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>Demo admin credentials:</p>
-              <p>Email: admin@example.com / Password: admin123</p>
-            </div>
             <div className="mt-4 w-full text-center">
               <Button variant="link" onClick={() => navigate('/login')}>
                 User Login

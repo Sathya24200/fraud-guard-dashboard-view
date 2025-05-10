@@ -55,10 +55,10 @@ const Login = () => {
 
   return (
     <div className="container flex h-[calc(100vh-10rem)] items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-2 border-primary/20 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
           <CardTitle className="text-2xl">Welcome to FraudGuard</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-white/90">
             Protecting your transactions with AI-powered fraud detection
           </CardDescription>
         </CardHeader>
@@ -81,6 +81,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -91,17 +92,14 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col items-start">
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
-                <div className="mt-4 text-sm text-muted-foreground">
-                  <p>Demo credentials:</p>
-                  <p>User: user@example.com / user123</p>
-                </div>
                 <div className="mt-4 w-full text-center">
                   <Button variant="link" onClick={() => navigate('/admin/login')}>
                     Admin Login
@@ -123,6 +121,7 @@ const Login = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -134,6 +133,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -144,6 +144,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -154,11 +155,12 @@ const Login = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    className="border-2 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-300" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </CardFooter>
