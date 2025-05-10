@@ -181,7 +181,7 @@ const AdminDashboard = () => {
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
+          </ChartContainer>
         </CardContent>
       </Card>
     </div>
