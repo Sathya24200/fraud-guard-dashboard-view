@@ -9,10 +9,19 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreditCard, HelpCircle } from "lucide-react";
+import { CreditCard, HelpCircle, Smartphone, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 // Form validation schema
+const mobileVerificationSchema = z.object({
+  mobileNumber: z.string()
+    .min(10, "Mobile number must be at least 10 digits")
+    .max(15, "Mobile number cannot exceed 15 digits")
+    .regex(/^\d+$/, "Mobile number must contain only digits"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits"),
+});
+
 const cardDetailsSchema = z.object({
   cardNumber: z.string()
     .min(16, "Card number must be at least 16 digits")
@@ -27,14 +36,26 @@ const cardDetailsSchema = z.object({
     .regex(/^\d+$/, "CVV must contain only digits"),
 });
 
+type MobileVerificationFormValues = z.infer<typeof mobileVerificationSchema>;
 type CardDetailsFormValues = z.infer<typeof cardDetailsSchema>;
 
 const CardDetailsSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [step, setStep] = useState<'mobile' | 'otp' | 'card'>('mobile');
+  const [otpSent, setOtpSent] = useState(false);
 
-  const form = useForm<CardDetailsFormValues>({
+  const mobileForm = useForm<MobileVerificationFormValues>({
+    resolver: zodResolver(mobileVerificationSchema),
+    defaultValues: {
+      mobileNumber: '',
+      otp: '',
+    },
+  });
+
+  const cardForm = useForm<CardDetailsFormValues>({
     resolver: zodResolver(cardDetailsSchema),
     defaultValues: {
       cardNumber: '',
@@ -44,7 +65,66 @@ const CardDetailsSignup = () => {
     },
   });
 
-  const onSubmit = async (data: CardDetailsFormValues) => {
+  const sendOTP = async (data: { mobileNumber: string }) => {
+    setIsSendingOTP(true);
+    
+    try {
+      // In a real application, this would make an API call to send the OTP
+      console.log("Sending OTP to:", data.mobileNumber);
+      
+      // Simulate OTP sent
+      setTimeout(() => {
+        toast({
+          title: "OTP Sent",
+          description: `A verification code has been sent to ${data.mobileNumber}`,
+        });
+        
+        setOtpSent(true);
+        setStep('otp');
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      toast({
+        title: "Failed to send OTP",
+        description: "Please check your mobile number and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  const verifyOTP = async (data: { otp: string }) => {
+    setIsSubmitting(true);
+    
+    try {
+      // In a real application, this would make an API call to verify the OTP
+      console.log("Verifying OTP:", data.otp);
+      
+      // Simulate OTP verification
+      setTimeout(() => {
+        toast({
+          title: "OTP Verified",
+          description: "Your mobile number has been verified.",
+        });
+        
+        setStep('card');
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      toast({
+        title: "Invalid OTP",
+        description: "The verification code you entered is incorrect.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitCardDetails = async (data: CardDetailsFormValues) => {
     setIsSubmitting(true);
 
     try {
@@ -121,75 +201,168 @@ const CardDetailsSignup = () => {
         <Card className="backdrop-blur-sm border-2 border-primary/20 shadow-xl">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
             <div className="flex items-center justify-center mb-4">
-              <CreditCard className="h-10 w-10 text-white/80" />
+              {step === 'mobile' || step === 'otp' ? (
+                <Smartphone className="h-10 w-10 text-white/80" />
+              ) : (
+                <CreditCard className="h-10 w-10 text-white/80" />
+              )}
             </div>
-            <CardTitle className="text-2xl text-center">Add Payment Method</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              {step === 'mobile' && "Verify Your Mobile Number"}
+              {step === 'otp' && "Enter Verification Code"}
+              {step === 'card' && "Add Payment Method"}
+            </CardTitle>
             <CardDescription className="text-center text-white/80">
-              Your details are protected with end-to-end encryption
+              {step === 'mobile' && "We'll send a verification code to your phone"}
+              {step === 'otp' && "Enter the 6-digit code sent to your mobile"}
+              {step === 'card' && "Your details are protected with end-to-end encryption"}
             </CardDescription>
           </CardHeader>
           
           <CardContent className="p-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="cardholderName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cardholder Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="John Doe" 
-                          {...field} 
-                          className="border-2 focus:ring-2 focus:ring-blue-400"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="cardNumber"
-                  render={({ field: { onChange, ...rest } }) => (
-                    <FormItem>
-                      <FormLabel>Card Number</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="1234 5678 9012 3456" 
-                          onChange={(e) => {
-                            const formatted = formatCreditCardNumber(e.target.value);
-                            e.target.value = formatted;
-                            onChange(e);
-                          }}
-                          maxLength={19}
-                          className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
-                          {...rest}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
+            {step === 'mobile' && (
+              <Form {...mobileForm}>
+                <form onSubmit={mobileForm.handleSubmit(sendOTP)} className="space-y-6">
                   <FormField
-                    control={form.control}
-                    name="expiryDate"
-                    render={({ field: { onChange, ...rest } }) => (
+                    control={mobileForm.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Expiry Date</FormLabel>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <Input 
+                              placeholder="Enter your mobile number" 
+                              {...field} 
+                              className="border-2 focus:ring-2 focus:ring-blue-400"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          We'll send a verification code to this number
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={isSendingOTP}
+                  >
+                    {isSendingOTP ? "Sending..." : "Send Verification Code"}
+                  </Button>
+                </form>
+              </Form>
+            )}
+            
+            {step === 'otp' && (
+              <Form {...mobileForm}>
+                <form onSubmit={mobileForm.handleSubmit(verifyOTP)} className="space-y-6">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Shield className="h-12 w-12 text-primary" />
+                      <h3 className="text-xl font-medium text-center">Verification Code</h3>
+                      <p className="text-sm text-muted-foreground text-center">
+                        We've sent a 6-digit code to your mobile number
+                      </p>
+                    </div>
+                    
+                    <FormField
+                      control={mobileForm.control}
+                      name="otp"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormControl>
+                            <InputOTP maxLength={6} {...field}>
+                              <InputOTPGroup>
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                              </InputOTPGroup>
+                            </InputOTP>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex flex-col space-y-2 w-full">
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "Verifying..." : "Verify Code"}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setStep('mobile');
+                          setOtpSent(false);
+                        }}
+                        className="text-sm"
+                      >
+                        Change Mobile Number
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="link"
+                        onClick={() => sendOTP({ mobileNumber: mobileForm.getValues("mobileNumber") })}
+                        disabled={isSendingOTP}
+                        className="text-sm"
+                      >
+                        {isSendingOTP ? "Resending..." : "Resend Code"}
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
+            )}
+            
+            {step === 'card' && (
+              <Form {...cardForm}>
+                <form onSubmit={cardForm.handleSubmit(submitCardDetails)} className="space-y-6">
+                  <FormField
+                    control={cardForm.control}
+                    name="cardholderName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cardholder Name</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="MM/YY" 
+                            placeholder="John Doe" 
+                            {...field} 
+                            className="border-2 focus:ring-2 focus:ring-blue-400"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={cardForm.control}
+                    name="cardNumber"
+                    render={({ field: { onChange, ...rest } }) => (
+                      <FormItem>
+                        <FormLabel>Card Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="1234 5678 9012 3456" 
                             onChange={(e) => {
-                              const formatted = formatExpiryDate(e.target.value);
+                              const formatted = formatCreditCardNumber(e.target.value);
                               e.target.value = formatted;
                               onChange(e);
                             }}
-                            maxLength={5}
+                            maxLength={19}
                             className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
                             {...rest}
                           />
@@ -199,42 +372,68 @@ const CardDetailsSignup = () => {
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="cvv"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CVV</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="•••" 
-                            maxLength={4}
-                            className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Processing..." : "Secure Submit"}
-                </Button>
-              </form>
-            </Form>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={cardForm.control}
+                      name="expiryDate"
+                      render={({ field: { onChange, ...rest } }) => (
+                        <FormItem>
+                          <FormLabel>Expiry Date</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="MM/YY" 
+                              onChange={(e) => {
+                                const formatted = formatExpiryDate(e.target.value);
+                                e.target.value = formatted;
+                                onChange(e);
+                              }}
+                              maxLength={5}
+                              className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
+                              {...rest}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={cardForm.control}
+                      name="cvv"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CVV</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="•••" 
+                              maxLength={4}
+                              className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Processing..." : "Secure Submit"}
+                  </Button>
+                </form>
+              </Form>
+            )}
           </CardContent>
           
           <CardFooter className="flex justify-center bg-slate-50 rounded-b-lg">
             <div className="text-sm text-muted-foreground text-center">
-              <p>Your payment information is securely encrypted</p>
-              <p className="mt-1">We comply with PCI DSS standards for secure handling of card data</p>
+              <p>Your information is securely encrypted</p>
+              <p className="mt-1">We comply with PCI DSS standards for secure handling of data</p>
             </div>
           </CardFooter>
         </Card>
