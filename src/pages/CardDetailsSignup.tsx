@@ -14,14 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 // Form validation schema
-const mobileVerificationSchema = z.object({
-  mobileNumber: z.string()
-    .min(10, "Mobile number must be at least 10 digits")
-    .max(15, "Mobile number cannot exceed 15 digits")
-    .regex(/^\d+$/, "Mobile number must contain only digits"),
-  otp: z.string().length(6, "OTP must be exactly 6 digits"),
-});
-
 const cardDetailsSchema = z.object({
   cardNumber: z.string()
     .min(16, "Card number must be at least 16 digits")
@@ -36,30 +28,25 @@ const cardDetailsSchema = z.object({
     .regex(/^\d+$/, "CVV must contain only digits"),
 });
 
-const cardOTPSchema = z.object({
-  cardOTP: z.string().length(6, "OTP must be exactly 6 digits"),
+const mobileVerificationSchema = z.object({
+  mobileNumber: z.string()
+    .min(10, "Mobile number must be at least 10 digits")
+    .max(15, "Mobile number cannot exceed 15 digits")
+    .regex(/^\d+$/, "Mobile number must contain only digits"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits"),
 });
 
-type MobileVerificationFormValues = z.infer<typeof mobileVerificationSchema>;
 type CardDetailsFormValues = z.infer<typeof cardDetailsSchema>;
-type CardOTPFormValues = z.infer<typeof cardOTPSchema>;
+type MobileVerificationFormValues = z.infer<typeof mobileVerificationSchema>;
 
 const CardDetailsSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingOTP, setIsSendingOTP] = useState(false);
-  const [step, setStep] = useState<'mobile' | 'otp' | 'card' | 'card-otp'>('mobile');
+  const [step, setStep] = useState<'card' | 'mobile' | 'otp'>('card');
   const [otpSent, setOtpSent] = useState(false);
   const [cardDetails, setCardDetails] = useState<CardDetailsFormValues | null>(null);
-
-  const mobileForm = useForm<MobileVerificationFormValues>({
-    resolver: zodResolver(mobileVerificationSchema),
-    defaultValues: {
-      mobileNumber: '',
-      otp: '',
-    },
-  });
 
   const cardForm = useForm<CardDetailsFormValues>({
     resolver: zodResolver(cardDetailsSchema),
@@ -70,13 +57,46 @@ const CardDetailsSignup = () => {
       cvv: '',
     },
   });
-  
-  const cardOTPForm = useForm<CardOTPFormValues>({
-    resolver: zodResolver(cardOTPSchema),
+
+  const mobileForm = useForm<MobileVerificationFormValues>({
+    resolver: zodResolver(mobileVerificationSchema),
     defaultValues: {
-      cardOTP: '',
+      mobileNumber: '',
+      otp: '',
     },
   });
+
+  const submitCardDetails = async (data: CardDetailsFormValues) => {
+    setIsSubmitting(true);
+
+    try {
+      // Here we would typically validate the card details
+      console.log("Card details submitted:", data);
+      
+      // Store card details for final confirmation
+      setCardDetails(data);
+      
+      // Show toast and proceed to mobile number entry
+      toast({
+        title: "Card details received",
+        description: "Please enter your mobile number for verification.",
+      });
+      
+      setTimeout(() => {
+        setStep('mobile');
+      }, 1500);
+
+    } catch (error) {
+      console.error("Error processing card details:", error);
+      toast({
+        title: "Error processing card details",
+        description: "Please check your card information and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const sendOTP = async (data: { mobileNumber: string }) => {
     setIsSendingOTP(true);
@@ -118,69 +138,6 @@ const CardDetailsSignup = () => {
       // Simulate OTP verification
       setTimeout(() => {
         toast({
-          title: "OTP Verified",
-          description: "Your mobile number has been verified.",
-        });
-        
-        setStep('card');
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
-      toast({
-        title: "Invalid OTP",
-        description: "The verification code you entered is incorrect.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const submitCardDetails = async (data: CardDetailsFormValues) => {
-    setIsSubmitting(true);
-
-    try {
-      // Here we would typically validate the card details
-      console.log("Card details submitted:", data);
-      
-      // Store card details for final confirmation
-      setCardDetails(data);
-      
-      // Show toast and send card verification OTP
-      toast({
-        title: "Card details received",
-        description: "Please verify your card with the OTP sent to your registered mobile number.",
-      });
-      
-      // In a real app, the system would send an OTP to the user's mobile number
-      setTimeout(() => {
-        setStep('card-otp');
-      }, 1500);
-
-    } catch (error) {
-      console.error("Error processing card details:", error);
-      toast({
-        title: "Error processing card details",
-        description: "Please check your card information and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const verifyCardOTP = async (data: CardOTPFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      // In a real application, this would verify the card OTP
-      console.log("Verifying Card OTP:", data.cardOTP);
-      console.log("For card:", cardDetails);
-      
-      // Simulate OTP verification
-      setTimeout(() => {
-        toast({
           title: "Card Verified Successfully",
           description: "Your card has been securely added to your account.",
         });
@@ -190,9 +147,9 @@ const CardDetailsSignup = () => {
       }, 1500);
       
     } catch (error) {
-      console.error("Error verifying card OTP:", error);
+      console.error("Error verifying OTP:", error);
       toast({
-        title: "Invalid Card OTP",
+        title: "Invalid OTP",
         description: "The verification code you entered is incorrect.",
         variant: "destructive",
       });
@@ -247,136 +204,29 @@ const CardDetailsSignup = () => {
         <Card className="backdrop-blur-sm border-2 border-primary/20 shadow-xl">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
             <div className="flex items-center justify-center mb-4">
-              {step === 'mobile' || step === 'otp' ? (
-                <Smartphone className="h-10 w-10 text-white/80" />
-              ) : step === 'card' ? (
+              {step === 'card' && (
                 <CreditCard className="h-10 w-10 text-white/80" />
-              ) : (
+              )}
+              {step === 'mobile' && (
+                <Smartphone className="h-10 w-10 text-white/80" />
+              )}
+              {step === 'otp' && (
                 <Shield className="h-10 w-10 text-white/80" />
               )}
             </div>
             <CardTitle className="text-2xl text-center">
-              {step === 'mobile' && "Verify Your Mobile Number"}
-              {step === 'otp' && "Enter Verification Code"}
               {step === 'card' && "Add Payment Method"}
-              {step === 'card-otp' && "Final Card Verification"}
+              {step === 'mobile' && "Enter Your Mobile Number"}
+              {step === 'otp' && "Verify Your Mobile Number"}
             </CardTitle>
             <CardDescription className="text-center text-white/80">
+              {step === 'card' && "Your details are protected with end-to-end encryption"}
               {step === 'mobile' && "We'll send a verification code to your phone"}
               {step === 'otp' && "Enter the 6-digit code sent to your mobile"}
-              {step === 'card' && "Your details are protected with end-to-end encryption"}
-              {step === 'card-otp' && "Enter the verification code sent to your registered mobile for this card"}
             </CardDescription>
           </CardHeader>
           
           <CardContent className="p-6">
-            {step === 'mobile' && (
-              <Form {...mobileForm}>
-                <form onSubmit={mobileForm.handleSubmit(sendOTP)} className="space-y-6">
-                  <FormField
-                    control={mobileForm.control}
-                    name="mobileNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mobile Number</FormLabel>
-                        <FormControl>
-                          <div className="flex">
-                            <Input 
-                              placeholder="Enter your mobile number" 
-                              {...field} 
-                              className="border-2 focus:ring-2 focus:ring-blue-400"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          We'll send a verification code to this number
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    disabled={isSendingOTP}
-                  >
-                    {isSendingOTP ? "Sending..." : "Send Verification Code"}
-                  </Button>
-                </form>
-              </Form>
-            )}
-            
-            {step === 'otp' && (
-              <Form {...mobileForm}>
-                <form onSubmit={mobileForm.handleSubmit(verifyOTP)} className="space-y-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="flex flex-col items-center space-y-2">
-                      <Shield className="h-12 w-12 text-primary" />
-                      <h3 className="text-xl font-medium text-center">Verification Code</h3>
-                      <p className="text-sm text-muted-foreground text-center">
-                        We've sent a 6-digit code to your mobile number
-                      </p>
-                    </div>
-                    
-                    <FormField
-                      control={mobileForm.control}
-                      name="otp"
-                      render={({ field }) => (
-                        <FormItem className="w-full">
-                          <FormControl>
-                            <InputOTP maxLength={6} {...field}>
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="flex flex-col space-y-2 w-full">
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? "Verifying..." : "Verify Code"}
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setStep('mobile');
-                          setOtpSent(false);
-                        }}
-                        className="text-sm"
-                      >
-                        Change Mobile Number
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="link"
-                        onClick={() => sendOTP({ mobileNumber: mobileForm.getValues("mobileNumber") })}
-                        disabled={isSendingOTP}
-                        className="text-sm"
-                      >
-                        {isSendingOTP ? "Resending..." : "Resend Code"}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </Form>
-            )}
-            
             {step === 'card' && (
               <Form {...cardForm}>
                 <form onSubmit={cardForm.handleSubmit(submitCardDetails)} className="space-y-6">
@@ -473,38 +323,88 @@ const CardDetailsSignup = () => {
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Processing..." : "Continue to Verification"}
+                    {isSubmitting ? "Processing..." : "Continue to Mobile Verification"}
                   </Button>
                 </form>
               </Form>
             )}
             
-            {step === 'card-otp' && (
-              <Form {...cardOTPForm}>
-                <form onSubmit={cardOTPForm.handleSubmit(verifyCardOTP)} className="space-y-6">
+            {step === 'mobile' && (
+              <Form {...mobileForm}>
+                <form onSubmit={mobileForm.handleSubmit(sendOTP)} className="space-y-6">
+                  <div className="p-4 bg-slate-50 rounded-lg mb-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="text-green-500 h-5 w-5" />
+                      <p className="text-sm font-medium">Card details received</p>
+                    </div>
+                    {cardDetails && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        **** **** **** {cardDetails.cardNumber.replace(/\s/g, '').slice(-4)}
+                      </p>
+                    )}
+                  </div>
+                
+                  <FormField
+                    control={mobileForm.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <Input 
+                              placeholder="Enter your mobile number" 
+                              {...field} 
+                              className="border-2 focus:ring-2 focus:ring-blue-400"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          We'll send a verification code to this number
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={isSendingOTP}
+                  >
+                    {isSendingOTP ? "Sending..." : "Send Verification Code"}
+                  </Button>
+                </form>
+              </Form>
+            )}
+            
+            {step === 'otp' && (
+              <Form {...mobileForm}>
+                <form onSubmit={mobileForm.handleSubmit(verifyOTP)} className="space-y-6">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="p-3 bg-blue-100 rounded-full">
-                        <CreditCard className="h-12 w-12 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-medium text-center">Card Verification Code</h3>
+                      <Shield className="h-12 w-12 text-primary" />
+                      <h3 className="text-xl font-medium text-center">Verification Code</h3>
                       <p className="text-sm text-muted-foreground text-center">
-                        For security, we've sent a 6-digit code to verify this card
+                        We've sent a 6-digit code to your mobile number
                       </p>
-                      
-                      {cardDetails && (
-                        <div className="mt-4 p-3 bg-slate-50 border rounded-lg w-full">
-                          <p className="text-xs text-muted-foreground mb-1">Card Number</p>
-                          <p className="font-medium">
-                            **** **** **** {cardDetails.cardNumber.slice(-4)}
-                          </p>
-                        </div>
-                      )}
                     </div>
                     
+                    {cardDetails && (
+                      <div className="p-4 bg-slate-50 rounded-lg w-full">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="text-green-500 h-5 w-5" />
+                          <p className="text-sm font-medium">Card details received</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          **** **** **** {cardDetails.cardNumber.replace(/\s/g, '').slice(-4)}
+                        </p>
+                      </div>
+                    )}
+                    
                     <FormField
-                      control={cardOTPForm.control}
-                      name="cardOTP"
+                      control={mobileForm.control}
+                      name="otp"
                       render={({ field }) => (
                         <FormItem className="w-full">
                           <FormControl>
@@ -536,24 +436,20 @@ const CardDetailsSignup = () => {
                       <Button
                         type="button"
                         variant="ghost"
-                        onClick={() => setStep('card')}
+                        onClick={() => setStep('mobile')}
                         className="text-sm"
                       >
-                        Back to Card Details
+                        Change Mobile Number
                       </Button>
                       
                       <Button
                         type="button"
                         variant="link"
-                        onClick={() => {
-                          toast({
-                            title: "New OTP Sent",
-                            description: "A new verification code has been sent to your mobile number",
-                          });
-                        }}
+                        onClick={() => sendOTP({ mobileNumber: mobileForm.getValues("mobileNumber") })}
+                        disabled={isSendingOTP}
                         className="text-sm"
                       >
-                        Resend Card OTP
+                        {isSendingOTP ? "Resending..." : "Resend Code"}
                       </Button>
                     </div>
                   </div>
