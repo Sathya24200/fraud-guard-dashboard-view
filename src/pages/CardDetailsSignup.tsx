@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +15,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 // Form validation schema
 const cardDetailsSchema = z.object({
   cardNumber: z.string()
-    .min(16, "Card number must be at least 16 digits")
-    .max(19, "Card number cannot exceed 19 digits")
-    .regex(/^\d+$/, "Card number must contain only digits"),
+    .transform(val => val.replace(/\D/g, '')) // Strip non-digits before validation
+    .refine(val => val.length >= 16 && val.length <= 19, "Card number must be 16-19 digits")
+    .refine(val => /^\d+$/.test(val), "Card number must contain only digits"),
   cardholderName: z.string().min(2, "Cardholder name is required"),
   expiryDate: z.string()
     .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, "Expiry date must be in MM/YY format"),
@@ -160,20 +159,13 @@ const CardDetailsSignup = () => {
 
   // Format credit card number with spaces
   const formatCreditCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
-    }
+    // Remove all non-digit characters
+    const v = value.replace(/\D/g, '');
+    
+    // Add space after every 4 digits
+    const formatted = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+    
+    return formatted;
   };
   
   // Format expiry date with slash
@@ -251,16 +243,15 @@ const CardDetailsSignup = () => {
                   <FormField
                     control={cardForm.control}
                     name="cardNumber"
-                    render={({ field: { onChange, ...rest } }) => (
+                    render={({ field: { onChange, value, ...rest } }) => (
                       <FormItem>
                         <FormLabel>Card Number</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="1234 5678 9012 3456" 
+                            value={value ? formatCreditCardNumber(value) : ''}
                             onChange={(e) => {
-                              const formatted = formatCreditCardNumber(e.target.value);
-                              e.target.value = formatted;
-                              onChange(e);
+                              onChange(e.target.value);
                             }}
                             maxLength={19}
                             className="border-2 focus:ring-2 focus:ring-blue-400 font-mono"
