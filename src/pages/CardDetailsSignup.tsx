@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CreditCard, HelpCircle, Smartphone, Shield, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { useAuth } from "@/context/AuthContext";
 
 // Form validation schema
 const cardDetailsSchema = z.object({
@@ -32,20 +34,26 @@ const mobileVerificationSchema = z.object({
     .min(10, "Mobile number must be at least 10 digits")
     .max(15, "Mobile number cannot exceed 15 digits")
     .regex(/^\d+$/, "Mobile number must contain only digits"),
+});
+
+const otpVerificationSchema = z.object({
   otp: z.string().length(6, "OTP must be exactly 6 digits"),
 });
 
 type CardDetailsFormValues = z.infer<typeof cardDetailsSchema>;
 type MobileVerificationFormValues = z.infer<typeof mobileVerificationSchema>;
+type OtpVerificationFormValues = z.infer<typeof otpVerificationSchema>;
 
 const CardDetailsSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [step, setStep] = useState<'card' | 'mobile' | 'otp'>('card');
   const [otpSent, setOtpSent] = useState(false);
   const [cardDetails, setCardDetails] = useState<CardDetailsFormValues | null>(null);
+  const [mobileNumber, setMobileNumber] = useState<string>('');
 
   const cardForm = useForm<CardDetailsFormValues>({
     resolver: zodResolver(cardDetailsSchema),
@@ -61,6 +69,12 @@ const CardDetailsSignup = () => {
     resolver: zodResolver(mobileVerificationSchema),
     defaultValues: {
       mobileNumber: '',
+    },
+  });
+
+  const otpForm = useForm<OtpVerificationFormValues>({
+    resolver: zodResolver(otpVerificationSchema),
+    defaultValues: {
       otp: '',
     },
   });
@@ -97,10 +111,13 @@ const CardDetailsSignup = () => {
     }
   };
 
-  const sendOTP = async (data: { mobileNumber: string }) => {
+  const sendOTP = async (data: MobileVerificationFormValues) => {
     setIsSendingOTP(true);
     
     try {
+      // Save mobile number for future use
+      setMobileNumber(data.mobileNumber);
+      
       // In a real application, this would make an API call to send the OTP
       console.log("Sending OTP to:", data.mobileNumber);
       
@@ -127,22 +144,39 @@ const CardDetailsSignup = () => {
     }
   };
 
-  const verifyOTP = async (data: { otp: string }) => {
+  const verifyOTP = async (data: OtpVerificationFormValues) => {
     setIsSubmitting(true);
     
     try {
       // In a real application, this would make an API call to verify the OTP
       console.log("Verifying OTP:", data.otp);
       
-      // Simulate OTP verification
+      // Simulate account creation and verification
       setTimeout(() => {
-        toast({
-          title: "Card Verified Successfully",
-          description: "Your card has been securely added to your account.",
-        });
+        // Create a basic user account after OTP verification
+        const email = `user${Math.floor(Math.random() * 10000)}@example.com`; // Generate random email for demo
+        const password = `Pass${Math.floor(Math.random() * 100000)}`; // Generate random password for demo
+        const name = cardDetails?.cardholderName || "New User";
         
-        // Navigate to dashboard after successful verification
-        navigate('/dashboard');
+        // Register the user with the auth context
+        register(email, password, name)
+          .then((success) => {
+            if (success) {
+              toast({
+                title: "Account Created Successfully",
+                description: "Your card has been linked to your new account.",
+              });
+              
+              // Navigate to dashboard after successful verification
+              navigate('/dashboard');
+            } else {
+              toast({
+                title: "Account Creation Failed",
+                description: "There was a problem creating your account.",
+                variant: "destructive",
+              });
+            }
+          });
       }, 1500);
       
     } catch (error) {
@@ -370,14 +404,14 @@ const CardDetailsSignup = () => {
             )}
             
             {step === 'otp' && (
-              <Form {...mobileForm}>
-                <form onSubmit={mobileForm.handleSubmit(verifyOTP)} className="space-y-6">
+              <Form {...otpForm}>
+                <form onSubmit={otpForm.handleSubmit(verifyOTP)} className="space-y-6">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="flex flex-col items-center space-y-2">
                       <Shield className="h-12 w-12 text-primary" />
                       <h3 className="text-xl font-medium text-center">Verification Code</h3>
                       <p className="text-sm text-muted-foreground text-center">
-                        We've sent a 6-digit code to your mobile number
+                        We've sent a 6-digit code to {mobileNumber}
                       </p>
                     </div>
                     
@@ -394,7 +428,7 @@ const CardDetailsSignup = () => {
                     )}
                     
                     <FormField
-                      control={mobileForm.control}
+                      control={otpForm.control}
                       name="otp"
                       render={({ field }) => (
                         <FormItem className="w-full">
@@ -421,7 +455,7 @@ const CardDetailsSignup = () => {
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Verifying..." : "Complete Verification"}
+                        {isSubmitting ? "Creating Account..." : "Complete Registration"}
                       </Button>
                       
                       <Button
@@ -436,7 +470,7 @@ const CardDetailsSignup = () => {
                       <Button
                         type="button"
                         variant="link"
-                        onClick={() => sendOTP({ mobileNumber: mobileForm.getValues("mobileNumber") })}
+                        onClick={() => sendOTP({ mobileNumber: mobileNumber })}
                         disabled={isSendingOTP}
                         className="text-sm"
                       >
