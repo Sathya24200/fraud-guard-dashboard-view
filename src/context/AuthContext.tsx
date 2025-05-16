@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
   isAdmin: () => boolean;
+  getAllUsers: () => User[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,8 +94,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = () => user?.role === "admin";
 
+  // Function to get all users (for admin panel)
+  const getAllUsers = () => {
+    // Return users without passwords for security reasons
+    return users.map(({ password, ...rest }) => rest);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAdmin, getAllUsers }}>
       {children}
     </AuthContext.Provider>
   );
