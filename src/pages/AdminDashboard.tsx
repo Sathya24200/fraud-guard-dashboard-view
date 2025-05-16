@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import {
 } from "@/components/ui/chart";
 import { useAuth } from "@/context/AuthContext";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Users, Shield, CreditCard, Search } from "lucide-react";
+import { Users, Shield, CreditCard, Search, AlertTriangle, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data for the dashboard
 const fraudStats = [
@@ -36,11 +36,11 @@ const userData = [
 ];
 
 const fraudTypeData = [
-  { name: "Card Testing", value: 35 },
-  { name: "Identity Theft", value: 25 },
-  { name: "Account Takeover", value: 20 },
-  { name: "Chargeback Fraud", value: 15 },
-  { name: "Other", value: 5 },
+  { name: "Card Testing", value: 35, description: "Fraudsters test stolen card numbers with small purchases" },
+  { name: "Identity Theft", value: 25, description: "Using stolen personal information to open accounts" },
+  { name: "Account Takeover", value: 20, description: "Unauthorized access to existing accounts" },
+  { name: "Chargeback Fraud", value: 15, description: "Purchases made with intention to dispute" },
+  { name: "Other", value: 5, description: "Miscellaneous fraud attempts" },
 ];
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE"];
@@ -49,6 +49,9 @@ const AdminDashboard = () => {
   const { user, isAdmin, getAllUsers } = useAuth();
   const navigate = useNavigate();
   const [allUsers, setAllUsers] = useState([]);
+
+  // Calculate total for percentages
+  const totalFraudValue = fraudTypeData.reduce((acc, item) => acc + item.value, 0);
 
   useEffect(() => {
     // Redirect if not admin
@@ -181,33 +184,64 @@ const AdminDashboard = () => {
             <CardTitle>Fraud Types</CardTitle>
             <CardDescription>Distribution of different fraud categories</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={{
-              "Card Testing": { color: COLORS[0] },
-              "Identity Theft": { color: COLORS[1] },
-              "Account Takeover": { color: COLORS[2] },
-              "Chargeback Fraud": { color: COLORS[3] },
-              "Other": { color: COLORS[4] },
-            }} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Pie
-                    data={fraudTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {fraudTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent className="flex flex-col lg:flex-row gap-6">
+            <div className="lg:w-1/2">
+              <ChartContainer config={{
+                "Card Testing": { color: COLORS[0] },
+                "Identity Theft": { color: COLORS[1] },
+                "Account Takeover": { color: COLORS[2] },
+                "Chargeback Fraud": { color: COLORS[3] },
+                "Other": { color: COLORS[4] },
+              }} className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Pie
+                      data={fraudTypeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {fraudTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+            
+            <div className="lg:w-1/2 space-y-4">
+              <h3 className="text-lg font-medium mb-4">Fraud Type Details</h3>
+              {fraudTypeData.map((type, index) => (
+                <div key={index} className="flex items-start space-x-2 p-3 rounded-lg bg-white/60 border border-gray-200 shadow-sm">
+                  {index === 0 && <ShieldAlert className="flex-shrink-0 h-5 w-5 text-red-500" />}
+                  {index === 1 && <ShieldX className="flex-shrink-0 h-5 w-5 text-orange-500" />}
+                  {index === 2 && <AlertTriangle className="flex-shrink-0 h-5 w-5 text-yellow-500" />}
+                  {index === 3 && <ShieldCheck className="flex-shrink-0 h-5 w-5 text-blue-500" />}
+                  {index === 4 && <Shield className="flex-shrink-0 h-5 w-5 text-gray-500" />}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{type.name}</span>
+                      <Badge variant="outline" className="bg-blue-50">
+                        {type.value}%
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{type.description}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 mt-4">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Detection Rate
+                </h4>
+                <p className="text-sm mt-1">Our system successfully detected 98.2% of all fraud attempts in the last month.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
