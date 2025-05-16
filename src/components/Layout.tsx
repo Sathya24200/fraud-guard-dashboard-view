@@ -18,7 +18,7 @@ const Layout = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
@@ -70,8 +70,10 @@ const Layout = () => {
           </div>
         </div>
       </header>
-      <main className="flex-1">
-        <Outlet />
+      <main className="flex-1 pt-4">
+        <div className="container">
+          <Outlet />
+        </div>
       </main>
       <footer className="border-t py-4">
         <div className="container text-center text-sm text-muted-foreground">
